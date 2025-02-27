@@ -73,6 +73,10 @@ class LinkableMigrationTask extends BuildTask
         $ct = 0;
         foreach ($elements as $element) {
             $oldInfos = \Sheadawson\Linkable\Models\EmbeddedObject::get()->byID($element['EmbeddedObjectID']);
+            if ($oldInfos === null) {
+                static::write_message("{$element['EmbeddedObjectID']} not found.");
+                continue;
+            }
             $object = ElementOembed::get()->byID($element['ID']);
             $object->EmbedTitle = $oldInfos->Title;
             $object->EmbedType = $oldInfos->Type;
