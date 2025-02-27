@@ -3,9 +3,10 @@
 namespace Dynamic\Link\Task;
 
 use gorriecoe\Link\Models\Link;
-use SilverStripe\Control\Director;
 use SilverStripe\Dev\BuildTask;
+use SilverStripe\Control\Director;
 use SilverStripe\Subsites\Model\Subsite;
+use Dynamic\Elements\Oembed\Elements\ElementOembed;
 
 class LinkableMigrationTask extends BuildTask
 {
@@ -41,6 +42,7 @@ class LinkableMigrationTask extends BuildTask
         }
 
         $this->migrateLinks();
+        $this->migrateEmbeded();
 
         if (class_exists(Subsite::class)) {
             // reset the subsite filter to what it was
@@ -62,6 +64,29 @@ class LinkableMigrationTask extends BuildTask
             $ct++;
         }
         static::write_message("{$ct} records updated.");
+    }
+
+    public function migrateEmbeded() {
+        //$elements = \Sheadawson\Linkable\Models\EmbeddedObject::get();
+        $sql = "SELECT ID, EmbeddedObjectID FROM `ElementOembed`";
+        $elements = \SilverStripe\ORM\DB::query($sql);
+        $ct = 0;
+        foreach ($elements as $element) {
+            $oldInfos = \Sheadawson\Linkable\Models\EmbeddedObject::get()->byID($element['EmbeddedObjectID']);
+            $object = ElementOembed::get()->byID($element['ID']);
+            $object->EmbedTitle = $oldInfos->Title;
+            $object->EmbedType = $oldInfos->Type;
+            $object->EmbedSourceURL = $oldInfos->SourceURL;
+            $object->EmbedHTML = $oldInfos->EmbedHTML;
+            $object->EmbedWidth = $oldInfos->Width;
+            $object->EmbedHeight = $oldInfos->Height;
+            $object->EmbedAspectRatio = $oldInfos->Height * 100 / $oldInfos->Width;
+            $object->EmbedDescription = $oldInfos->Description;
+            $object->write();
+            static::write_message("{$element['EmbeddedObjectID']} updated.");
+            $ct++;
+        }
+
     }
 
     /**
